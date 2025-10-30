@@ -161,15 +161,25 @@ languageToggle.addEventListener('click', () => {
   applyTranslations();
 });
 
+
 const fragmentParams = new URLSearchParams(globalThis.location.hash.slice(1));
 const accessToken = fragmentParams.get('access_token');
 
+function updateAuthVisibility() {
+  if (accessToken) {
+    authLink.style.display = 'none';
+    signedInSection.hidden = false;
+  } else {
+    authLink.style.display = '';
+    signedInSection.hidden = true;
+  }
+}
+
 if (accessToken) {
-  authLink.hidden = true;
-  signedInSection.hidden = false;
   globalThis.history.replaceState(null, '', `${globalThis.location.pathname}${globalThis.location.search}`);
 }
 
+updateAuthVisibility();
 applyTranslations();
 
 const buildQuery = () => {
