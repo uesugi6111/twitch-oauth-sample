@@ -23,6 +23,12 @@
         margin-bottom: 1rem;
       }
 
+      .subtitle {
+        color: #666;
+        font-size: 0.8rem;
+        margin: 0;
+      }
+
       form {
         display: grid;
         gap: 1rem;
@@ -96,7 +102,10 @@
   <body>
     <main>
       <div class="toolbar">
-        <h1 id="heading">Twitch Bits Leaderboard</h1>
+        <div>
+          <h1 id="heading">Twitch Bits Leaderboard</h1>
+          <p id="subtitle" class="subtitle">怪しくないです</p>
+        </div>
         <button id="languageToggle" type="button">日本語</button>
       </div>
       <p>
@@ -168,6 +177,7 @@
           htmlLang: 'en',
           heading: 'Twitch Bits Leaderboard',
           connect: 'Connect with Twitch',
+          subtitle: 'Not suspicious',
           countLabel: 'Count',
           periodLabel: 'Period',
           startedAtLabel: 'Started At',
@@ -199,6 +209,7 @@
           htmlLang: 'ja',
           heading: 'Twitchビッツリーダーボード',
           connect: 'Twitchで接続',
+          subtitle: '怪しくないです',
           countLabel: '件数',
           periodLabel: '期間',
           startedAtLabel: '開始日時',
@@ -287,6 +298,7 @@
         languageToggle.textContent = strings.languageToggle;
         fetchButton.textContent = strings.fetchButton;
         userIdInput.title = strings.userIdTooltip;
+  document.getElementById('subtitle').textContent = strings.subtitle;
 
         for (const element of labelledElements) {
           const key = element.dataset.i18n;
