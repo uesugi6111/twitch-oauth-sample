@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+  </head>
+  <script>
+    if (location.hash) {
+      const token = location.hash.match(/access_token=(.*)&scope/)[1]; 
+      const method = 'GET';
+      const headers = {
+        Authorization: `Bearer ${token}`,
+        'Client-Id': 'b7zndpqll3izhipefm62wqtzdb5tzp'
+      };
+      fetch('https://api.twitch.tv/helix/users?client_id=b7zndpqll3izhipefm62wqtzdb5tzp', { method, headers })
+        .then(res => res.json())
+        .then(res => {
+          alert(JSON.stringify(res, null, '  '));
+        })
+        .catch(console.error);
+    }
+  </script>
+  <body>
+    <a href="https://id.twitch.tv/oauth2/authorize?client_id=b7zndpqll3izhipefm62wqtzdb5tzp&redirect_uri=https://localhost/&response_type=token&scope=user:read:email">Twitch</a>
+  </body>
+</html>
