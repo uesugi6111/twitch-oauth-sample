@@ -15,6 +15,14 @@
         margin: 0 auto;
       }
 
+      .toolbar {
+        align-items: center;
+        display: flex;
+        gap: 1rem;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+      }
+
       form {
         display: grid;
         gap: 1rem;
@@ -33,6 +41,14 @@
       button {
         padding: 0.5rem;
         font-size: 1rem;
+      }
+
+      #languageToggle {
+        padding: 0.5rem 1rem;
+      }
+
+      .actions {
+        align-self: end;
       }
 
       table {
@@ -55,11 +71,19 @@
         margin-bottom: 1rem;
         min-height: 1.5rem;
       }
+
+      #dateRange {
+        margin-bottom: 1rem;
+        min-height: 1.5rem;
+      }
     </style>
   </head>
   <body>
     <main>
-      <h1>Twitch Bits Leaderboard</h1>
+      <div class="toolbar">
+        <h1 id="heading">Twitch Bits Leaderboard</h1>
+        <button id="languageToggle" type="button">日本語</button>
+      </div>
       <p>
         <a
           id="authLink"
@@ -72,42 +96,43 @@
       <section id="signedIn" hidden>
         <form id="leaderboardForm">
           <label>
-            Count
+            <span class="label-text" data-i18n="countLabel">Count</span>
             <input id="count" type="number" min="1" max="100" value="10" />
           </label>
           <label>
-            Period
+            <span class="label-text" data-i18n="periodLabel">Period</span>
             <select id="period">
-              <option value="day">Day</option>
-              <option value="week" selected>Week</option>
-              <option value="month">Month</option>
-              <option value="year">Year</option>
-              <option value="all">All</option>
+              <option value="day" data-i18n-option="day">Day</option>
+              <option value="week" data-i18n-option="week" selected>Week</option>
+              <option value="month" data-i18n-option="month">Month</option>
+              <option value="year" data-i18n-option="year">Year</option>
+              <option value="all" data-i18n-option="all">All</option>
             </select>
           </label>
           <label>
-            Started At
+            <span class="label-text" data-i18n="startedAtLabel">Started At</span>
             <input id="startedAt" type="datetime-local" />
           </label>
           <label>
-            User ID
+            <span class="label-text" data-i18n="userIdLabel">User ID</span>
             <input id="userId" type="text" />
           </label>
-          <div style="align-self: end;">
-            <button type="submit">Fetch Leaderboard</button>
+          <div class="actions">
+            <button id="fetchButton" type="submit">Fetch Leaderboard</button>
           </div>
         </form>
 
         <div id="status"></div>
+        <div id="dateRange"></div>
 
         <table aria-describedby="status">
           <thead>
             <tr>
-              <th>Rank</th>
-              <th>User Name</th>
-              <th>User Login</th>
-              <th>User ID</th>
-              <th>Score</th>
+              <th data-i18n="tableRank">Rank</th>
+              <th data-i18n="tableUserName">User Name</th>
+              <th data-i18n="tableUserLogin">User Login</th>
+              <th data-i18n="tableUserId">User ID</th>
+              <th data-i18n="tableScore">Score</th>
             </tr>
           </thead>
           <tbody id="leaderboardResults"></tbody>
@@ -119,11 +144,152 @@
       const CLIENT_ID = 'b7zndpqll3izhipefm62wqtzdb5tzp';
       const API_ENDPOINT = 'https://api.twitch.tv/helix/bits/leaderboard';
 
+      const translations = {
+        en: {
+          htmlLang: 'en',
+          heading: 'Twitch Bits Leaderboard',
+          connect: 'Connect with Twitch',
+          countLabel: 'Count',
+          periodLabel: 'Period',
+          startedAtLabel: 'Started At',
+          userIdLabel: 'User ID',
+          userIdTooltip: 'Enter a user ID to show bits from that user only.',
+          fetchButton: 'Fetch Leaderboard',
+          languageToggle: '日本語',
+          tableRank: 'Rank',
+          tableUserName: 'User Name',
+          tableUserLogin: 'User Login',
+          tableUserId: 'User ID',
+          tableScore: 'Score',
+          periodOptions: {
+            day: 'Day',
+            week: 'Week',
+            month: 'Month',
+            year: 'Year',
+            all: 'All'
+          },
+          statusLoading: 'Loading leaderboard...',
+          statusNoData: 'No leaderboard data returned for the current filters.',
+          statusErrorPrefix: 'Error: ',
+          statusRange: (count, start, end) => `Showing ${count} entries. Period: ${start} to ${end}`,
+          dateRange: (start, end) => `Date range: ${start} - ${end}`,
+          validationCount: 'Count must be between 1 and 100.',
+          validationStartedAt: 'Started At must be a valid date.'
+        },
+        ja: {
+          htmlLang: 'ja',
+          heading: 'Twitchビッツリーダーボード',
+          connect: 'Twitchで接続',
+          countLabel: '件数',
+          periodLabel: '期間',
+          startedAtLabel: '開始日時',
+          userIdLabel: 'ユーザーID',
+          userIdTooltip: '特定のユーザーからのビッツのみを取得したい場合に入力してください。',
+          fetchButton: 'リーダーボード取得',
+          languageToggle: 'English',
+          tableRank: '順位',
+          tableUserName: 'ユーザー名',
+          tableUserLogin: 'ユーザーログイン',
+          tableUserId: 'ユーザーID',
+          tableScore: 'スコア',
+          periodOptions: {
+            day: '日',
+            week: '週',
+            month: '月',
+            year: '年',
+            all: '全期間'
+          },
+          statusLoading: 'リーダーボードを読み込み中...',
+          statusNoData: '現在の条件に一致するリーダーボードデータはありません。',
+          statusErrorPrefix: 'エラー: ',
+          statusRange: (count, start, end) => `${count} 件を表示中。対象期間: ${start} - ${end}`,
+          dateRange: (start, end) => `期間: ${start} - ${end}`,
+          validationCount: '件数は1から100の間で入力してください。',
+          validationStartedAt: '開始日時には有効な日時を入力してください。'
+        }
+      };
+
+      let currentLang = 'en';
+      const state = {
+        status: 'idle',
+        lastCount: 0,
+        start: 'n/a',
+        end: 'n/a',
+        errorMessage: ''
+      };
+
+      const headingEl = document.getElementById('heading');
+      const languageToggle = document.getElementById('languageToggle');
       const authLink = document.getElementById('authLink');
       const signedInSection = document.getElementById('signedIn');
       const form = document.getElementById('leaderboardForm');
       const statusEl = document.getElementById('status');
+      const dateRangeEl = document.getElementById('dateRange');
       const resultsBody = document.getElementById('leaderboardResults');
+      const fetchButton = document.getElementById('fetchButton');
+      const userIdInput = document.getElementById('userId');
+      const countInput = document.getElementById('count');
+      const periodSelect = document.getElementById('period');
+      const startedAtInput = document.getElementById('startedAt');
+
+      const labelledElements = Array.from(document.querySelectorAll('[data-i18n]'));
+      const optionElements = Array.from(document.querySelectorAll('[data-i18n-option]'));
+
+      function updateStatus() {
+        const strings = translations[currentLang];
+        switch (state.status) {
+          case 'loading':
+            statusEl.textContent = strings.statusLoading;
+            dateRangeEl.textContent = '';
+            break;
+          case 'noData':
+            statusEl.textContent = strings.statusNoData;
+            dateRangeEl.textContent = '';
+            break;
+          case 'success':
+            statusEl.textContent = strings.statusRange(state.lastCount, state.start, state.end);
+            dateRangeEl.textContent = strings.dateRange(state.start, state.end);
+            break;
+          case 'error':
+            statusEl.textContent = strings.statusErrorPrefix + state.errorMessage;
+            dateRangeEl.textContent = '';
+            break;
+          default:
+            statusEl.textContent = '';
+            dateRangeEl.textContent = '';
+        }
+      }
+
+      function applyTranslations() {
+        const strings = translations[currentLang];
+        document.documentElement.lang = strings.htmlLang;
+        headingEl.textContent = strings.heading;
+        authLink.textContent = strings.connect;
+        languageToggle.textContent = strings.languageToggle;
+        fetchButton.textContent = strings.fetchButton;
+        userIdInput.title = strings.userIdTooltip;
+
+        for (const element of labelledElements) {
+          const key = element.dataset.i18n;
+          if (key && strings[key]) {
+            element.textContent = strings[key];
+          }
+        }
+
+        for (const option of optionElements) {
+          const key = option.dataset.i18nOption;
+          if (key && strings.periodOptions[key]) {
+            option.textContent = strings.periodOptions[key];
+          }
+        }
+
+        updateStatus();
+      }
+
+      languageToggle.addEventListener('click', () => {
+        currentLang = currentLang === 'en' ? 'ja' : 'en';
+        applyTranslations();
+      });
 
       const fragmentParams = new URLSearchParams(globalThis.location.hash.slice(1));
       const accessToken = fragmentParams.get('access_token');
@@ -134,15 +300,18 @@
         globalThis.history.replaceState(null, '', globalThis.location.pathname + globalThis.location.search);
       }
 
+      applyTranslations();
+
       const buildQuery = () => {
+        const strings = translations[currentLang];
         const params = new URLSearchParams();
-        const countValue = Number(document.getElementById('count').value) || 0;
-        const periodValue = document.getElementById('period').value;
-        const startedAtValue = document.getElementById('startedAt').value;
-        const userIdValue = document.getElementById('userId').value.trim();
+        const countValue = Number(countInput.value) || 0;
+        const periodValue = periodSelect.value;
+        const startedAtValue = startedAtInput.value;
+        const userIdValue = userIdInput.value.trim();
 
         if (countValue < 1 || countValue > 100) {
-          throw new Error('Count must be between 1 and 100.');
+          throw new RangeError(strings.validationCount);
         }
 
         params.set('count', String(countValue));
@@ -151,7 +320,7 @@
         if (startedAtValue) {
           const startedAtDate = new Date(startedAtValue);
           if (Number.isNaN(startedAtDate.getTime())) {
-            throw new TypeError('Started At must be a valid date.');
+            throw new TypeError(strings.validationStartedAt);
           }
           params.set('started_at', startedAtDate.toISOString());
         }
@@ -197,7 +366,10 @@
         }
 
         try {
-          statusEl.textContent = 'Loading leaderboard...';
+          state.status = 'loading';
+          state.errorMessage = '';
+          updateStatus();
+
           const query = buildQuery();
           const response = await fetch(`${API_ENDPOINT}?${query}`, {
             headers: {
@@ -214,20 +386,27 @@
 
           const payload = await response.json();
           const entries = payload && payload.data ? payload.data : [];
+
           if (!entries.length) {
-            statusEl.textContent = 'No leaderboard data returned for the current filters.';
+            state.status = 'noData';
+            state.lastCount = 0;
             resultsBody.innerHTML = '';
+            updateStatus();
             return;
           }
 
           renderRows(entries);
           const dateRange = payload && payload.date_range ? payload.date_range : {};
-          const start = dateRange.started_at || 'n/a';
-          const end = dateRange.ended_at || 'n/a';
-          statusEl.textContent = `Showing ${entries.length} entries. Period: ${start} to ${end}`;
+          state.lastCount = entries.length;
+          state.start = dateRange.started_at || 'n/a';
+          state.end = dateRange.ended_at || 'n/a';
+          state.status = 'success';
+          updateStatus();
         } catch (error) {
-          statusEl.textContent = error.message;
+          state.status = 'error';
+          state.errorMessage = error instanceof Error ? error.message : String(error);
           resultsBody.innerHTML = '';
+          updateStatus();
         }
       };
 
