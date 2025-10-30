@@ -97,6 +97,11 @@
         text-align: center;
         z-index: 10;
       }
+
+      .api-note {
+        font-size: 0.85rem;
+        margin-bottom: 1rem;
+      }
     </style>
   </head>
   <body>
@@ -133,6 +138,9 @@
               <option value="all" data-i18n-option="all">All</option>
             </select>
           </label>
+          <p id="apiNote" class="api-note">
+            For detailed API specifications, see <a href="https://dev.twitch.tv/docs/api/reference#get-bits-leaderboard" target="_blank" rel="noopener noreferrer">Twitch Docs: Get Bits Leaderboard</a>.
+          </p>
           <label>
             <span class="label-text" data-i18n="startedAtLabel">Started At</span>
             <input id="startedAt" type="datetime-local" />
@@ -178,6 +186,7 @@
           heading: 'Twitch Bits Leaderboard',
           connect: 'Connect with Twitch',
           subtitle: 'Not suspicious',
+          apiNote: 'For detailed API specifications, see <a href="https://dev.twitch.tv/docs/api/reference#get-bits-leaderboard" target="_blank" rel="noopener noreferrer">Twitch Docs: Get Bits Leaderboard</a>.',
           countLabel: 'Count',
           periodLabel: 'Period',
           startedAtLabel: 'Started At',
@@ -210,6 +219,7 @@
           heading: 'Twitchビッツリーダーボード',
           connect: 'Twitchで接続',
           subtitle: '怪しくないです',
+          apiNote: '詳細なAPI仕様は <a href="https://dev.twitch.tv/docs/api/reference#get-bits-leaderboard" target="_blank" rel="noopener noreferrer">Twitch Docs: Get Bits Leaderboard</a> を参照してください。',
           countLabel: '件数',
           periodLabel: '期間',
           startedAtLabel: '開始日時',
@@ -261,6 +271,7 @@
       const countInput = document.getElementById('count');
       const periodSelect = document.getElementById('period');
       const startedAtInput = document.getElementById('startedAt');
+  const apiNoteEl = document.getElementById('apiNote');
 
       const labelledElements = Array.from(document.querySelectorAll('[data-i18n]'));
       const optionElements = Array.from(document.querySelectorAll('[data-i18n-option]'));
@@ -299,6 +310,7 @@
         fetchButton.textContent = strings.fetchButton;
         userIdInput.title = strings.userIdTooltip;
   document.getElementById('subtitle').textContent = strings.subtitle;
+        apiNoteEl.innerHTML = strings.apiNote;
 
         for (const element of labelledElements) {
           const key = element.dataset.i18n;
