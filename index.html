@@ -1,25 +1,240 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <title>Twitch Bits Leaderboard</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        line-height: 1.5;
+        margin: 2rem;
+      }
+
+      main {
+        max-width: 720px;
+        margin: 0 auto;
+      }
+
+      form {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        margin-bottom: 1.5rem;
+      }
+
+      label {
+        display: flex;
+        flex-direction: column;
+        font-weight: 600;
+      }
+
+      input,
+      select,
+      button {
+        padding: 0.5rem;
+        font-size: 1rem;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th,
+      td {
+        border: 1px solid #ccc;
+        padding: 0.5rem;
+        text-align: left;
+      }
+
+      th {
+        background-color: #f4f4f4;
+      }
+
+      #status {
+        margin-bottom: 1rem;
+        min-height: 1.5rem;
+      }
+    </style>
   </head>
-  <script>
-    if (location.hash) {
-      const token = location.hash.match(/access_token=(.*)&scope/)[1]; 
-      const method = 'GET';
-      const headers = {
-        Authorization: `Bearer ${token}`,
-        'Client-Id': 'b7zndpqll3izhipefm62wqtzdb5tzp'
-      };
-      fetch('https://api.twitch.tv/helix/users?client_id=b7zndpqll3izhipefm62wqtzdb5tzp', { method, headers })
-        .then(res => res.json())
-        .then(res => {
-          alert(JSON.stringify(res, null, '  '));
-        })
-        .catch(console.error);
-    }
-  </script>
   <body>
-    <a href="https://id.twitch.tv/oauth2/authorize?client_id=b7zndpqll3izhipefm62wqtzdb5tzp&redirect_uri=https://github.uesugi.app/twitch-oauth-sample/&response_type=token&scope=user:read:email">Twitch</a>
+    <main>
+      <h1>Twitch Bits Leaderboard</h1>
+      <p>
+        <a
+          id="authLink"
+          href="https://id.twitch.tv/oauth2/authorize?client_id=b7zndpqll3izhipefm62wqtzdb5tzp&redirect_uri=https://github.uesugi.app/twitch-oauth-sample/&response_type=token&scope=bits:read"
+        >
+          Connect with Twitch
+        </a>
+      </p>
+
+      <section id="signedIn" hidden>
+        <form id="leaderboardForm">
+          <label>
+            Count
+            <input id="count" type="number" min="1" max="100" value="10" />
+          </label>
+          <label>
+            Period
+            <select id="period">
+              <option value="day">Day</option>
+              <option value="week" selected>Week</option>
+              <option value="month">Month</option>
+              <option value="year">Year</option>
+              <option value="all">All</option>
+            </select>
+          </label>
+          <label>
+            Started At
+            <input id="startedAt" type="datetime-local" />
+          </label>
+          <label>
+            User ID
+            <input id="userId" type="text" />
+          </label>
+          <div style="align-self: end;">
+            <button type="submit">Fetch Leaderboard</button>
+          </div>
+        </form>
+
+        <div id="status"></div>
+
+        <table aria-describedby="status">
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>User Name</th>
+              <th>User Login</th>
+              <th>User ID</th>
+              <th>Score</th>
+            </tr>
+          </thead>
+          <tbody id="leaderboardResults"></tbody>
+        </table>
+      </section>
+    </main>
+
+    <script>
+      const CLIENT_ID = 'b7zndpqll3izhipefm62wqtzdb5tzp';
+      const API_ENDPOINT = 'https://api.twitch.tv/helix/bits/leaderboard';
+
+      const authLink = document.getElementById('authLink');
+      const signedInSection = document.getElementById('signedIn');
+      const form = document.getElementById('leaderboardForm');
+      const statusEl = document.getElementById('status');
+      const resultsBody = document.getElementById('leaderboardResults');
+
+      const fragmentParams = new URLSearchParams(globalThis.location.hash.slice(1));
+      const accessToken = fragmentParams.get('access_token');
+
+      if (accessToken) {
+        authLink.hidden = true;
+        signedInSection.hidden = false;
+        globalThis.history.replaceState(null, '', globalThis.location.pathname + globalThis.location.search);
+      }
+
+      const buildQuery = () => {
+        const params = new URLSearchParams();
+        const countValue = Number(document.getElementById('count').value) || 0;
+        const periodValue = document.getElementById('period').value;
+        const startedAtValue = document.getElementById('startedAt').value;
+        const userIdValue = document.getElementById('userId').value.trim();
+
+        if (countValue < 1 || countValue > 100) {
+          throw new Error('Count must be between 1 and 100.');
+        }
+
+        params.set('count', String(countValue));
+        params.set('period', periodValue);
+
+        if (startedAtValue) {
+          const startedAtDate = new Date(startedAtValue);
+          if (Number.isNaN(startedAtDate.getTime())) {
+            throw new TypeError('Started At must be a valid date.');
+          }
+          params.set('started_at', startedAtDate.toISOString());
+        }
+
+        if (userIdValue) {
+          params.set('user_id', userIdValue);
+        }
+
+        return params.toString();
+      };
+
+      const formatCell = value => (value === undefined || value === null ? '' : value);
+
+      const renderRows = entries => {
+        resultsBody.innerHTML = '';
+        for (const entry of entries) {
+          const row = document.createElement('tr');
+          const {
+            rank,
+            user_name: userName,
+            user_login: userLogin,
+            user_id: userId,
+            score
+          } = entry || {};
+          row.innerHTML = `
+            <td>${formatCell(rank)}</td>
+            <td>${formatCell(userName)}</td>
+            <td>${formatCell(userLogin)}</td>
+            <td>${formatCell(userId)}</td>
+            <td>${formatCell(score)}</td>
+          `;
+          resultsBody.appendChild(row);
+        }
+      };
+
+      const fetchLeaderboard = async event => {
+        if (event) {
+          event.preventDefault();
+        }
+
+        if (!accessToken) {
+          return;
+        }
+
+        try {
+          statusEl.textContent = 'Loading leaderboard...';
+          const query = buildQuery();
+          const response = await fetch(`${API_ENDPOINT}?${query}`, {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              'Client-Id': CLIENT_ID
+            }
+          });
+
+          if (!response.ok) {
+            const errorBody = await response.json().catch(() => ({}));
+            const message = errorBody && errorBody.message ? errorBody.message : `Request failed with ${response.status}`;
+            throw new Error(message);
+          }
+
+          const payload = await response.json();
+          const entries = payload && payload.data ? payload.data : [];
+          if (!entries.length) {
+            statusEl.textContent = 'No leaderboard data returned for the current filters.';
+            resultsBody.innerHTML = '';
+            return;
+          }
+
+          renderRows(entries);
+          const dateRange = payload && payload.date_range ? payload.date_range : {};
+          const start = dateRange.started_at || 'n/a';
+          const end = dateRange.ended_at || 'n/a';
+          statusEl.textContent = `Showing ${entries.length} entries. Period: ${start} to ${end}`;
+        } catch (error) {
+          statusEl.textContent = error.message;
+          resultsBody.innerHTML = '';
+        }
+      };
+
+      if (accessToken) {
+        form.addEventListener('submit', fetchLeaderboard);
+        fetchLeaderboard();
+      }
+    </script>
   </body>
 </html>
